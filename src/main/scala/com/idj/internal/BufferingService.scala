@@ -8,7 +8,7 @@ class BufferingService[T](
     config: BufferingConfig
 )(implicit ctx: Context) {
 
-  def start(conService: ControllerService[T], n: Int): Unit = {
-    new Bufferer[T](conService, n, itemSource, config)
+  def start(controller: Controller[T], n: Int): Unit = {
+    new Bufferer[T](controller, n, itemSource, config)
   }
 }

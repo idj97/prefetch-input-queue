@@ -9,7 +9,7 @@ import scala.collection.mutable
 import scala.util.{Failure, Success}
 
 class Bufferer[T](
-    conService: ControllerService[T],
+    controller: Controller[T],
     n: Int,
     itemSource: ItemSource[T],
     config: BufferingConfig
@@ -30,7 +30,7 @@ class Bufferer[T](
         val remaining = n - buffered
         if (remaining == 0 && ongoingCalls.isEmpty && !done) {
           logger.debug(s"Buffering done $buffered/$n, notifying controller")
-          conService.bufferingDone()
+          controller.bufferingDone()
           done = true
         } else if (remaining > 0 && ongoingCalls.size < config.maxConcurrency) {
           val batchSize = if (remaining >= config.batchSize) config.batchSize else remaining
@@ -66,7 +66,7 @@ class Bufferer[T](
           s"Batch $callId with ${items.length} items arrived, sending items to controller"
         )
         ongoingCalls.remove(callId)
-        conService.addItems(items)
+        controller.addItems(items)
         this.send(FetchBatch)
 
       case BatchFailed(callId) =>

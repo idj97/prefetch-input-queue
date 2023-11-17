@@ -70,14 +70,14 @@ class ControllerSpec extends AnyWordSpec {
     val expectedFreeSpace = config.maxQueueSize - initialItems.length
     doNothing()
       .when(bufService)
-      .start(any[ControllerService[Int]], ArgumentMatchers.eq(expectedFreeSpace))
+      .start(any[Controller[Int]], ArgumentMatchers.eq(expectedFreeSpace))
 
     // start first buffering
     // expected result: controller is in buffering state and bufService is called
     controller.send(StartBuffering)
     ctx.waitForInactivity()
     verify(bufService, times(1))
-      .start(any[ControllerService[Int]], ArgumentMatchers.eq(expectedFreeSpace))
+      .start(any[Controller[Int]], ArgumentMatchers.eq(expectedFreeSpace))
     val debugT1 = controller.ask[DebugInfo](p => Debug(p))
     assert(debugT1.buffering)
 
@@ -86,7 +86,7 @@ class ControllerSpec extends AnyWordSpec {
     controller.send(StartBuffering)
     ctx.waitForInactivity()
     verify(bufService, times(1))
-      .start(any[ControllerService[Int]], ArgumentMatchers.eq(expectedFreeSpace))
+      .start(any[Controller[Int]], ArgumentMatchers.eq(expectedFreeSpace))
     val debugT2 = controller.ask[DebugInfo](p => Debug(p))
     assert(debugT2.buffering)
 

@@ -25,19 +25,19 @@ class BuffererSpec extends AnyWordSpec {
     ).when(itemSource).get(3)
     doReturn(Future.successful(Seq(i7))).when(itemSource).get(1)
 
-    val conService = mock(classOf[ControllerService[Int]])
-    doNothing().when(conService).addItems(any[Seq[Item[Int]]])
-    doNothing().when(conService).bufferingDone()
+    val controller = mock(classOf[Controller[Int]])
+    doNothing().when(controller).addItems(any[Seq[Item[Int]]])
+    doNothing().when(controller).bufferingDone()
 
-    val _ = new Bufferer[Int](conService, n, itemSource, config)(ctx)
+    val _ = new Bufferer[Int](controller, n, itemSource, config)(ctx)
     Thread.sleep(1000)
     ctx.waitForInactivity(Some(Duration.ofHours(1)))
 
     verify(itemSource, times(2)).get(3)
     verify(itemSource, times(1)).get(1)
-    verify(conService, times(1)).addItems(Seq(i1, i2, i3))
-    verify(conService, times(1)).addItems(Seq(i4, i5, i6))
-    verify(conService, times(1)).addItems(Seq(i7))
-    verify(conService, times(1)).bufferingDone()
+    verify(controller, times(1)).addItems(Seq(i1, i2, i3))
+    verify(controller, times(1)).addItems(Seq(i4, i5, i6))
+    verify(controller, times(1)).addItems(Seq(i7))
+    verify(controller, times(1)).bufferingDone()
   }
 }

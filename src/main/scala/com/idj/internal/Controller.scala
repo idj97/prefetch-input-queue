@@ -22,6 +22,14 @@ class Controller[T](
 
   import Protocol._
 
+  def addItems(items: Seq[Item[T]]): Unit = {
+    this.send(AddItems(items))
+  }
+
+  def bufferingDone(): Unit = {
+    this.send(BufferingDone)
+  }
+
   override def run(msg: ControllerMsg): Unit = {
     msg match {
       case Get(n, p) =>
@@ -45,7 +53,7 @@ class Controller[T](
           val freeSpace = conf.maxQueueSize - queue.length
           if (freeSpace > 0) {
             logger.debug(s"Starting buffering, free space: $freeSpace")
-            val _ = bufService.start(new ControllerService[T](this), freeSpace)
+            val _ = bufService.start(this, freeSpace)
             buffering = true
           }
         }
