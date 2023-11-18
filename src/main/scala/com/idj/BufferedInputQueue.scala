@@ -17,7 +17,7 @@ class BufferedInputQueue[T](
     new Controller[T](conf.name, conf.maxQueueSize, bufferingService)(ctx)
 
   def start(): Unit = {
-    controller.send(controller.Protocol.StartBuffering)
+    controller.send(controller.Protocol.Start)
   }
 
   def get(n: Int): Seq[T] = {
@@ -26,6 +26,10 @@ class BufferedInputQueue[T](
 
   def getAsync(n: Int): Future[Seq[T]] = {
     controller.askAsync[Seq[T]](p => controller.Protocol.Get(n, p))
+  }
+
+  def stop(): Unit = {
+    controller.send(controller.Protocol.Stop)
   }
 }
 

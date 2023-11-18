@@ -14,9 +14,8 @@ class BufferedInputQueueSpec extends AnyWordSpec {
   // that behavior of whole system is correct
   "test" in {
     val itemSource = new FakeUnorderedItemSource(120)
-    val conf = BufferedInputQueueConfig("test1", 50, 10, 2)
-    val ctx = new Context.Test()
-    val bufInQueue = BufferedInputQueue.create(itemSource, conf, ctx)
+    val conf = BufferedInputQueueConfig("itTest1", 50, 10, 2)
+    val bufInQueue = BufferedInputQueue.create(itemSource, conf, Context.Simple.global)
     bufInQueue.start()
 
     val itemsAccumulator = mutable.Set[Int]()
@@ -34,7 +33,7 @@ class BufferedInputQueueSpec extends AnyWordSpec {
     itemsAccumulator.addAll(items2)
 
     Thread.sleep(100)
-    val items3 = bufInQueue.get(600)
+    val items3 = bufInQueue.get(60)
     assert(items3.length == 20)
     items3.foreach(i => assert(!itemsAccumulator.contains(i)))
     itemsAccumulator.addAll(items3)
@@ -42,6 +41,8 @@ class BufferedInputQueueSpec extends AnyWordSpec {
     Thread.sleep(100)
     val items4 = bufInQueue.get(600)
     assert(items4.isEmpty)
+
+    bufInQueue.stop()
   }
 }
 

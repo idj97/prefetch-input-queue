@@ -19,6 +19,7 @@ class Controller[T](
   private val logger = LoggerFactory.getLogger(s"$getClass:$name")
   private val queue = mutable.Queue[T](initial: _*)
   private var buffering = false
+  private var stopped = false
 
   import Protocol._
 
@@ -32,6 +33,15 @@ class Controller[T](
 
   override def run(msg: ControllerMsg): Unit = {
     msg match {
+      case Start =>
+        logger.debug("Starting")
+        stopped = false
+        this.send(StartBuffering)
+
+      case Stop =>
+        logger.debug("Stopping")
+        stopped = true
+
       case Get(n, p) =>
         assert(n > 0)
         val items = mutable.ArrayBuffer[T]()
@@ -66,7 +76,9 @@ class Controller[T](
         if (buffering) {
           logger.debug(s"Buffering done")
           buffering = false
-          this.send(StartBuffering)
+          if (!stopped) {
+            this.send(StartBuffering)
+          }
         }
     }
   }
@@ -76,7 +88,8 @@ class Controller[T](
     case object StartBuffering extends ControllerMsg
     case class AddItems(items: Seq[T]) extends ControllerMsg
     case object BufferingDone extends ControllerMsg
-
+    case object Start extends ControllerMsg
+    case object Stop extends ControllerMsg
     private[idj] case class Debug(promise: Promise[DebugInfo]) extends ControllerMsg
     private[idj] case class DebugInfo(items: Seq[T], buffering: Boolean)
   }

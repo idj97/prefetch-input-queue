@@ -23,23 +23,27 @@ class Bufferer[T](
   private var callIdCounter = 1
   private var done = false
   private val ongoingCalls = mutable.Map[Int, Int]()
+  private var controllerNotified = false
 
-  this.send(FetchBatch)
+  this.send(Tick)
 
   override def run(msg: BuffererMsg): Unit = {
     msg match {
-      case FetchBatch =>
-        val remaining = n - buffered
-        if (remaining == 0 && ongoingCalls.isEmpty && !done) {
-          logger.debug(s"Buffering done $buffered/$n, notifying controller")
-          controller.bufferingDone()
+      case Tick =>
+        val remaining = n - buffered - ongoingCalls.values.sum
+        // if buffering is finished already OR just finished
+        if (done || (remaining == 0 && ongoingCalls.isEmpty)) {
+          if (!controllerNotified) {
+            logger.debug(s"Buffering done $buffered/$n, notifying controller")
+            controller.bufferingDone()
+            controllerNotified = true
+          }
           done = true
         } else if (remaining > 0 && ongoingCalls.size < maxConcurrency) {
           val batchSize = if (remaining >= maxBatchSize) maxBatchSize else remaining
           val callId = callIdCounter
           callIdCounter += 1
           ongoingCalls.addOne((callId, batchSize))
-          buffered += batchSize
           logger.debug(
             s"Fetching batch $callId, " +
               s"size: $batchSize, " +
@@ -52,7 +56,7 @@ class Bufferer[T](
               logger.error("Failed to fetch batch", ex)
               this.send(BatchFailed(callId))
           }
-          this.send(FetchBatch)
+          this.send(Tick)
         } else {
           if (remaining > 0) {
             logger.debug(
@@ -64,28 +68,28 @@ class Bufferer[T](
         }
 
       case BatchArrived(callId, items) =>
-        logger.debug(
-          s"Batch $callId with ${items.length} items arrived, sending items to controller"
-        )
         ongoingCalls.remove(callId)
         if (items.nonEmpty) {
+          logger.debug(
+            s"Batch $callId with ${items.length} items arrived, sending items to controller"
+          )
+          buffered += items.length
           controller.addItems(items)
-        } else {
+        } else if (!done) {
           logger.debug("Got empty batch, marking buffering as done")
           done = true
         }
-        this.send(FetchBatch)
+        this.send(Tick)
 
       case BatchFailed(callId) =>
         val batchSize = ongoingCalls(callId)
         logger.debug(s"Fetching batch $callId of $batchSize failed, trying again")
-        buffered -= batchSize
         ongoingCalls.remove(callId)
-        this.send(FetchBatch)
+        this.send(Tick)
     }
   }
 
-  case object FetchBatch extends BuffererMsg
+  case object Tick extends BuffererMsg
   case class BatchArrived(callId: Int, items: Seq[T]) extends BuffererMsg
   case class BatchFailed(callId: Int) extends BuffererMsg
 }
