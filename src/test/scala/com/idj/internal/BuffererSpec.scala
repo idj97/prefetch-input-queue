@@ -21,7 +21,7 @@ class BuffererSpec extends AnyWordSpec {
     val itemSource = mock(classOf[ItemSource[Int]])
 
     doReturn(
-      Future { Thread.sleep(500); Seq(i1, i2, i3) }(ExecutionContext.global),
+      Future.successful(Seq(i1, i2, i3)),
       Future.successful(Seq(i4, i5, i6))
     ).when(itemSource).get(3)
     doReturn(Future.successful(Seq(i7))).when(itemSource).get(1)
