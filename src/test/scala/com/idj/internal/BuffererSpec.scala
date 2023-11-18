@@ -1,7 +1,7 @@
 package com.idj.internal
 
 import castor.Context
-import com.idj.{Item, ItemSource}
+import com.idj.ItemSource
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.scalatest.wordspec.AnyWordSpec
@@ -16,7 +16,7 @@ class BuffererSpec extends AnyWordSpec {
     val ctx = new Context.Test()
 
     val n = 7
-    val Seq(i1, i2, i3, i4, i5, i6, i7) = Range(0, 7).map(i => Item(i, Instant.now()))
+    val Seq(i1, i2, i3, i4, i5, i6, i7) = Range(0, 7)
     val itemSource = mock(classOf[ItemSource[Int]])
 
     doReturn(
@@ -26,7 +26,7 @@ class BuffererSpec extends AnyWordSpec {
     doReturn(Future.successful(Seq(i7))).when(itemSource).get(1)
 
     val controller = mock(classOf[Controller[Int]])
-    doNothing().when(controller).addItems(any[Seq[Item[Int]]])
+    doNothing().when(controller).addItems(any[Seq[Int]])
     doNothing().when(controller).bufferingDone()
 
     val _ = new Bufferer[Int](controller, n, itemSource, config)(ctx)

@@ -1,7 +1,6 @@
 package com.idj.internal
 
 import castor.{Context, SimpleActor}
-import com.idj.Item
 import com.idj.internal.Controller._
 import org.slf4j.LoggerFactory
 
@@ -11,18 +10,18 @@ import scala.concurrent.Promise
 class Controller[T](
     conf: ControllerConfig,
     bufService: BufferingService[T],
-    initial: Seq[Item[T]] = Seq.empty
+    initial: Seq[T] = Seq.empty
 )(implicit ctx: Context)
     extends SimpleActor[ControllerMsg]
     with AskableActor[ControllerMsg] {
 
   private val logger = LoggerFactory.getLogger(s"$getClass:${conf.name}")
-  private val queue = mutable.Queue[Item[T]](initial: _*)
+  private val queue = mutable.Queue[T](initial: _*)
   private var buffering = false
 
   import Protocol._
 
-  def addItems(items: Seq[Item[T]]): Unit = {
+  def addItems(items: Seq[T]): Unit = {
     this.send(AddItems(items))
   }
 
@@ -34,7 +33,7 @@ class Controller[T](
     msg match {
       case Get(n, p) =>
         assert(n > 0)
-        val items = mutable.ArrayBuffer[Item[T]]()
+        val items = mutable.ArrayBuffer[T]()
         for (_ <- 1 to n) {
           if (queue.nonEmpty) {
             items.addOne(queue.dequeue())
@@ -75,13 +74,13 @@ class Controller[T](
   }
 
   object Protocol {
-    case class Get(n: Int, promise: Promise[Seq[Item[T]]]) extends ControllerMsg
+    case class Get(n: Int, promise: Promise[Seq[T]]) extends ControllerMsg
     case object StartBuffering extends ControllerMsg
-    case class AddItems(items: Seq[Item[T]]) extends ControllerMsg
+    case class AddItems(items: Seq[T]) extends ControllerMsg
     case object BufferingDone extends ControllerMsg
 
     private[idj] case class Debug(promise: Promise[DebugInfo]) extends ControllerMsg
-    private[idj] case class DebugInfo(items: Seq[Item[T]], buffering: Boolean)
+    private[idj] case class DebugInfo(items: Seq[T], buffering: Boolean)
   }
 }
 

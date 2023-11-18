@@ -1,8 +1,8 @@
 package com.idj.internal
 
 import castor.{Context, SimpleActor}
+import com.idj.ItemSource
 import com.idj.internal.Bufferer.BuffererMsg
-import com.idj.{Item, ItemSource}
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable
@@ -82,7 +82,7 @@ class Bufferer[T](
   }
 
   case object FetchBatch extends BuffererMsg
-  case class BatchArrived(callId: Int, items: Seq[Item[T]]) extends BuffererMsg
+  case class BatchArrived(callId: Int, items: Seq[T]) extends BuffererMsg
   case class BatchFailed(callId: Int) extends BuffererMsg
 }
 

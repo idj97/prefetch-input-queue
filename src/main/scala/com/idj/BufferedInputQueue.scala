@@ -20,12 +20,12 @@ class BufferedInputQueue[T](
     controller.send(controller.Protocol.StartBuffering)
   }
 
-  def get(n: Int): Seq[Item[T]] = {
-    controller.ask[Seq[Item[T]]](p => controller.Protocol.Get(n, p))
+  def get(n: Int): Seq[T] = {
+    controller.ask[Seq[T]](p => controller.Protocol.Get(n, p))
   }
 
-  def getAsync(n: Int): Future[Seq[Item[T]]] = {
-    controller.askAsync[Seq[Item[T]]](p => controller.Protocol.Get(n, p))
+  def getAsync(n: Int): Future[Seq[T]] = {
+    controller.askAsync[Seq[T]](p => controller.Protocol.Get(n, p))
   }
 }
 

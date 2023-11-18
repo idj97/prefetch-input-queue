@@ -1,18 +1,14 @@
 package com.idj.internal
 
 import castor.Context
-import com.idj.Item
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{doNothing, mock, times, verify}
 import org.scalatest.wordspec.AnyWordSpec
 
-import java.time.Instant
-
 class ControllerSpec extends AnyWordSpec {
   private val sharedNoopBufService = mock(classOf[BufferingService[Int]])
-  private val (i1, i2, i3) =
-    (Item(1, Instant.now()), Item(2, Instant.now()), Item(3, Instant.now()))
+  private val (i1, i2, i3) = (1, 2, 3)
 
   private def conf(name: String): ControllerConfig = {
     ControllerConfig(name = name, maxQueueSize = 5)
@@ -24,9 +20,8 @@ class ControllerSpec extends AnyWordSpec {
       val ctx: Context.Test = new Context.Test()
       val controller: Controller[Int] =
         new Controller[Int](conf("test1"), sharedNoopBufService)(ctx)
-      import controller.Protocol._
-
-      val items = controller.ask[Seq[Item[Int]]](p => Get(n = 1, p))
+      import controller.Protocol.Get
+      val items = controller.ask[Seq[Int]](p => Get(n = 1, p))
       assert(items.isEmpty)
     }
 
@@ -36,7 +31,7 @@ class ControllerSpec extends AnyWordSpec {
         new Controller[Int](conf("test2"), sharedNoopBufService, Seq(i1, i2, i3))(ctx)
       import controller.Protocol._
 
-      val requested = controller.ask[Seq[Item[Int]]](p => Get(n = 1, p))
+      val requested = controller.ask[Seq[Int]](p => Get(n = 1, p))
       val debug = controller.ask[DebugInfo](p => Debug(p))
       assert(requested == Seq(i1))
       assert(debug.items == Seq(i2, i3))
@@ -48,7 +43,7 @@ class ControllerSpec extends AnyWordSpec {
         new Controller[Int](conf("test3"), sharedNoopBufService, Seq(i1, i2, i3))(ctx)
       import controller.Protocol._
 
-      val requested = controller.ask[Seq[Item[Int]]](p => Get(n = 3, p))
+      val requested = controller.ask[Seq[Int]](p => Get(n = 3, p))
       val debug = controller.ask[DebugInfo](p => Debug(p))
       assert(requested == Seq(i1, i2, i3))
       assert(debug.items.isEmpty)
@@ -92,7 +87,7 @@ class ControllerSpec extends AnyWordSpec {
 
     // add two items
     // expected result: controller is still in buffering state and new buffered items are visible
-    val (b1, b2) = (Item(123, Instant.now()), Item(124, Instant.now()))
+    val (b1, b2) = (123, 124)
     controller.send(AddItems(Seq(b1, b2)))
     val debugT3 = controller.ask[DebugInfo](p => Debug(p))
     assert(debugT3.buffering)
@@ -100,7 +95,7 @@ class ControllerSpec extends AnyWordSpec {
 
     // add one more item
     // expected result: controller is still in buffering state and new buffered items are visible
-    val b3 = Item(125, Instant.now())
+    val b3 = 125
     controller.send(AddItems(Seq(b3)))
     val debugT4 = controller.ask[DebugInfo](p => Debug(p))
     assert(debugT4.buffering)
