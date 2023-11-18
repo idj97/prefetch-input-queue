@@ -1,7 +1,7 @@
 package com.idj
 
 import castor.Context
-import com.idj.internal.{BufferingConfig, BufferingService, Controller, ControllerConfig}
+import com.idj.internal.{BufferingService, Controller, ControllerConfig}
 
 import scala.concurrent.Future
 
@@ -11,8 +11,8 @@ class BufferedInputQueue[T](
     ctx: Context
 ) {
 
-  private val bufferingConfig = BufferingConfig(conf.batchSize, conf.maxConcurrency)
-  private val bufferingService = new BufferingService[T](itemSource, bufferingConfig)(ctx)
+  private val bufferingService =
+    new BufferingService[T](itemSource, conf.batchSize, conf.maxConcurrency)(ctx)
   private val controllerConf = ControllerConfig(conf.name, conf.queueSize)
   private val controller = new Controller[T](controllerConf, bufferingService)(ctx)
 

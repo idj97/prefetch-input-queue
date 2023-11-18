@@ -10,9 +10,10 @@ import scala.util.{Failure, Success}
 
 class Bufferer[T](
     controller: Controller[T],
-    n: Int,
     itemSource: ItemSource[T],
-    config: BufferingConfig
+    n: Int,
+    maxBatchSize: Int,
+    maxConcurrency: Int
 )(implicit ctx: Context)
     extends SimpleActor[BuffererMsg] {
 
@@ -32,8 +33,8 @@ class Bufferer[T](
           logger.debug(s"Buffering done $buffered/$n, notifying controller")
           controller.bufferingDone()
           done = true
-        } else if (remaining > 0 && ongoingCalls.size < config.maxConcurrency) {
-          val batchSize = if (remaining >= config.batchSize) config.batchSize else remaining
+        } else if (remaining > 0 && ongoingCalls.size < maxConcurrency) {
+          val batchSize = if (remaining >= maxBatchSize) maxBatchSize else remaining
           val callId = callIdCounter
           callIdCounter += 1
           ongoingCalls.addOne((callId, batchSize))
@@ -41,7 +42,7 @@ class Bufferer[T](
           logger.debug(
             s"Fetching batch $callId, " +
               s"size: $batchSize, " +
-              s"ongoing calls: ${ongoingCalls.size}/${config.maxConcurrency}"
+              s"ongoing calls: ${ongoingCalls.size}/$maxConcurrency"
           )
           itemSource.get(batchSize).onComplete {
             case Success(batch) =>
@@ -55,7 +56,7 @@ class Bufferer[T](
           if (remaining > 0) {
             logger.debug(
               s"Waiting (max concurrency reached), " +
-                s"ongoing calls: ${ongoingCalls.size}/${config.maxConcurrency}, " +
+                s"ongoing calls: ${ongoingCalls.size}/$maxConcurrency, " +
                 s"remaining: $remaining"
             )
           }

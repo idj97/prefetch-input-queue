@@ -6,13 +6,14 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.scalatest.wordspec.AnyWordSpec
 
-import java.time.{Duration, Instant}
+import java.time.Duration
 import scala.concurrent.{ExecutionContext, Future}
 
 class BuffererSpec extends AnyWordSpec {
 
   "test" in {
-    val config = BufferingConfig(batchSize = 3, maxConcurrency = 10)
+    val maxBatchSize = 3
+    val maxConcurrency = 10
     val ctx = new Context.Test()
 
     val n = 7
@@ -29,7 +30,7 @@ class BuffererSpec extends AnyWordSpec {
     doNothing().when(controller).addItems(any[Seq[Int]])
     doNothing().when(controller).bufferingDone()
 
-    val _ = new Bufferer[Int](controller, n, itemSource, config)(ctx)
+    val _ = new Bufferer[Int](controller, itemSource, n, maxBatchSize, maxConcurrency)(ctx)
     Thread.sleep(1000)
     ctx.waitForInactivity(Some(Duration.ofHours(1)))
 
