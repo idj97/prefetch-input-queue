@@ -71,6 +71,7 @@ class Bufferer[T](
         if (items.nonEmpty) {
           controller.addItems(items)
         } else {
+          logger.debug("Got empty batch, marking buffering as done")
           done = true
         }
         this.send(FetchBatch)

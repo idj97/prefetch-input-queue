@@ -68,9 +68,6 @@ class Controller[T](
           buffering = false
           this.send(StartBuffering)
         }
-
-      case other =>
-        logger.warn(s"Unhandled message: $other")
     }
   }
 

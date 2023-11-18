@@ -22,6 +22,7 @@ class BuffererSpec extends AnyWordSpec {
 
     doReturn(
       Future.successful(Seq(i1, i2, i3)),
+      Future.failed(new Exception("batch failed")),
       Future.successful(Seq(i4, i5, i6))
     ).when(itemSource).get(3)
     doReturn(Future.successful(Seq(i7))).when(itemSource).get(1)
@@ -34,7 +35,7 @@ class BuffererSpec extends AnyWordSpec {
     Thread.sleep(100)
     ctx.waitForInactivity(Some(Duration.ofHours(1)))
 
-    verify(itemSource, times(2)).get(3)
+    verify(itemSource, times(3)).get(3)
     verify(itemSource, times(1)).get(1)
     verify(controller, times(1)).addItems(Seq(i1, i2, i3))
     verify(controller, times(1)).addItems(Seq(i4, i5, i6))
