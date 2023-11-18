@@ -11,13 +11,14 @@ import scala.util.{Failure, Success}
 class Bufferer[T](
     controller: Controller[T],
     itemSource: ItemSource[T],
+    name: String,
     n: Int,
     maxBatchSize: Int,
     maxConcurrency: Int
 )(implicit ctx: Context)
     extends SimpleActor[BuffererMsg] {
 
-  private val logger = LoggerFactory.getLogger(getClass)
+  private val logger = LoggerFactory.getLogger(s"$getClass:$name")
   private var buffered = 0
   private var callIdCounter = 1
   private var done = false
@@ -67,7 +68,11 @@ class Bufferer[T](
           s"Batch $callId with ${items.length} items arrived, sending items to controller"
         )
         ongoingCalls.remove(callId)
-        controller.addItems(items)
+        if (items.nonEmpty) {
+          controller.addItems(items)
+        } else {
+          done = true
+        }
         this.send(FetchBatch)
 
       case BatchFailed(callId) =>
@@ -76,9 +81,6 @@ class Bufferer[T](
         buffered -= batchSize
         ongoingCalls.remove(callId)
         this.send(FetchBatch)
-
-      case other =>
-        logger.warn(s"Unhandled message: $other")
     }
   }
 

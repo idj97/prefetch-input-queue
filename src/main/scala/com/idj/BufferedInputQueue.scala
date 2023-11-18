@@ -12,7 +12,7 @@ class BufferedInputQueue[T](
 ) {
 
   private val bufferingService =
-    new BufferingService[T](itemSource, conf.maxBatchSize, conf.maxConcurrency)(ctx)
+    new BufferingService[T](itemSource, conf.name, conf.maxBatchSize, conf.maxConcurrency)(ctx)
   private val controller =
     new Controller[T](conf.name, conf.maxQueueSize, bufferingService)(ctx)
 

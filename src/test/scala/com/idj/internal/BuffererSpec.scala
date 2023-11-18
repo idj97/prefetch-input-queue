@@ -7,7 +7,7 @@ import org.mockito.Mockito._
 import org.scalatest.wordspec.AnyWordSpec
 
 import java.time.Duration
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 class BuffererSpec extends AnyWordSpec {
 
@@ -30,8 +30,8 @@ class BuffererSpec extends AnyWordSpec {
     doNothing().when(controller).addItems(any[Seq[Int]])
     doNothing().when(controller).bufferingDone()
 
-    val _ = new Bufferer[Int](controller, itemSource, n, maxBatchSize, maxConcurrency)(ctx)
-    Thread.sleep(1000)
+    val _ = new Bufferer[Int](controller, itemSource, "test", n, maxBatchSize, maxConcurrency)(ctx)
+    Thread.sleep(100)
     ctx.waitForInactivity(Some(Duration.ofHours(1)))
 
     verify(itemSource, times(2)).get(3)
