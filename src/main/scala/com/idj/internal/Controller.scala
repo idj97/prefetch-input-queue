@@ -8,14 +8,15 @@ import scala.collection.mutable
 import scala.concurrent.Promise
 
 class Controller[T](
-    conf: ControllerConfig,
+    name: String,
+    maxQueueSize: Int,
     bufService: BufferingService[T],
     initial: Seq[T] = Seq.empty
 )(implicit ctx: Context)
     extends SimpleActor[ControllerMsg]
     with AskableActor[ControllerMsg] {
 
-  private val logger = LoggerFactory.getLogger(s"$getClass:${conf.name}")
+  private val logger = LoggerFactory.getLogger(s"$getClass:$name")
   private val queue = mutable.Queue[T](initial: _*)
   private var buffering = false
 
@@ -49,7 +50,7 @@ class Controller[T](
 
       case StartBuffering =>
         if (!buffering) {
-          val freeSpace = conf.maxQueueSize - queue.length
+          val freeSpace = maxQueueSize - queue.length
           if (freeSpace > 0) {
             logger.debug(s"Starting buffering, free space: $freeSpace")
             val _ = bufService.start(this, freeSpace)

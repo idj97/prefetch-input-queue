@@ -9,17 +9,14 @@ import org.scalatest.wordspec.AnyWordSpec
 class ControllerSpec extends AnyWordSpec {
   private val sharedNoopBufService = mock(classOf[BufferingService[Int]])
   private val (i1, i2, i3) = (1, 2, 3)
-
-  private def conf(name: String): ControllerConfig = {
-    ControllerConfig(name = name, maxQueueSize = 5)
-  }
+  private val maxQueueSize = 5
 
   "Get" when {
 
     "empty" in {
       val ctx: Context.Test = new Context.Test()
       val controller: Controller[Int] =
-        new Controller[Int](conf("test1"), sharedNoopBufService)(ctx)
+        new Controller[Int]("test1", maxQueueSize, sharedNoopBufService)(ctx)
       import controller.Protocol.Get
       val items = controller.ask[Seq[Int]](p => Get(n = 1, p))
       assert(items.isEmpty)
@@ -28,7 +25,7 @@ class ControllerSpec extends AnyWordSpec {
     "n < len(queue)" in {
       val ctx: Context.Test = new Context.Test()
       val controller: Controller[Int] =
-        new Controller[Int](conf("test2"), sharedNoopBufService, Seq(i1, i2, i3))(ctx)
+        new Controller[Int]("test2", maxQueueSize, sharedNoopBufService, Seq(i1, i2, i3))(ctx)
       import controller.Protocol._
 
       val requested = controller.ask[Seq[Int]](p => Get(n = 1, p))
@@ -40,7 +37,7 @@ class ControllerSpec extends AnyWordSpec {
     "n == len(queue)" in {
       val ctx: Context.Test = new Context.Test()
       val controller: Controller[Int] =
-        new Controller[Int](conf("test3"), sharedNoopBufService, Seq(i1, i2, i3))(ctx)
+        new Controller[Int]("test3", maxQueueSize, sharedNoopBufService, Seq(i1, i2, i3))(ctx)
       import controller.Protocol._
 
       val requested = controller.ask[Seq[Int]](p => Get(n = 3, p))
@@ -57,12 +54,11 @@ class ControllerSpec extends AnyWordSpec {
     // initialize controller with two buffered items and maxQueueSize of 2
     // and create noopBufService mock
     val bufService = mock(classOf[BufferingService[Int]])
-    val config = conf("StartBuffering1")
     val initialItems = Seq(i1, i2)
     val controller: Controller[Int] =
-      new Controller[Int](config, bufService, initialItems)(ctx)
+      new Controller[Int]("StartBuffering1", maxQueueSize, bufService, initialItems)(ctx)
     import controller.Protocol._
-    val expectedFreeSpace = config.maxQueueSize - initialItems.length
+    val expectedFreeSpace = maxQueueSize - initialItems.length
     doNothing()
       .when(bufService)
       .start(any[Controller[Int]], ArgumentMatchers.eq(expectedFreeSpace))
