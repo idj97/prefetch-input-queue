@@ -1,8 +1,8 @@
 # Buffered Input Queue
 
-Buffered Input Queue is a lightweight, thread-safe Scala library created with Castor actors library for learning purposes. 
-It is designed to enhance the efficiency of multithreaded programs that prefetching/buffering the data from remote systems
-and serving it to other software components, all in a thread-safe way.
+Buffered Input Queue is a lightweight, thread-safe library built with Scala and actors for educational purposes. 
+It is designed to improve the efficiency of multithreaded programs that follow producer-consumer pattern by 
+prefetching/buffering the data from source systems and providing it to consumers, all in a thread-safe manner.
 
 - [x] Continuous prefetching / buffering
 - [x] Exponential backoff mechanism
@@ -24,11 +24,14 @@ First implement custom `ItemSource`:
 
 ```scala
 import com.idj.ItemSource
+import scala.util.Random
 
-class MyItemSource() extends ItemSource[Int] {
+class MyRandomIntsSource() extends ItemSource[Int] {
 
   override def get(n: Int): Future[Seq[Int]] = {
-    ???
+    Future.successful {
+      Seq.fill(n)(Random.nextInt())
+    }
   }
 }
 ```
@@ -36,8 +39,9 @@ class MyItemSource() extends ItemSource[Int] {
 Then configure, create and start BufferedInputQueue:
 
 ```scala 
+import com.idj.{BufferedInputQueueConfig, BufferedInputQueue}
 
-val itemSource = new MyItemSource()
+val itemSource = new MyRandomIntsSource()
 val config = BufferedInputQueueConfig(
   name = "myInputQueue",
   maxQueueSize = 1000,
@@ -64,13 +68,13 @@ bufInQueue.stop() // can be resumed by calling start() again
 
 ## Configuration
 
-| Name           | Description                                                  |
-|----------------|--------------------------------------------------------------|
-| name           | Name of the queue used for logging                           |
-| maxQueueSize   | Maximum number of items to prefetch/buffer                   |
-| maxConcurrency | Maximum number of concurrent fetch calls made to item source |
-| maxBatchSize   | Maximum number of items to fetch in each call                |
-| maxBackoff     | Maximum wait time used in backoff mechanism                  |
+| Name           | Description                                                  | Default  |
+|----------------|--------------------------------------------------------------|----------|
+| name           | Name used for logging                                        |          |
+| maxQueueSize   | Maximum number of items to prefetch/buffer                   |          |
+| maxConcurrency | Maximum number of concurrent fetch calls made to item source |          |
+| maxBatchSize   | Maximum number of items to fetch in each call                |          |
+| maxBackoff     | Maximum wait time used in backoff mechanism                  | 1 second |
 
 ## License
 
