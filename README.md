@@ -1,13 +1,15 @@
 # Prefetch Input Queue
 
-Prefetch Input Queue is a lightweight, thread-safe library built with Scala and actors for educational purposes. 
-It is designed to improve the efficiency of multithreaded programs that follow producer-consumer pattern by 
-prefetching/buffering the data from source systems and providing it to consumers, all in a thread-safe manner.
+Prefetch Input Queue is a lightweight, thread-safe library built with Scala and Actor model for educational purposes. 
+It is designed to improve the efficiency of programs operating in a producer-consumer pattern by 
+prefetching/buffering the data from source systems and delivering it to consumers, all in a thread-safe manner.
 
+Todo:
 - [x] Continuous prefetching / buffering
+- [x] Thread-safe
 - [x] Exponential backoff mechanism
 - [x] Configurability
-- [ ] Published to central Maven Repo
+- [ ] Publish to central Maven Repo
 
 ## Install
 
@@ -68,13 +70,13 @@ queue.stop() // can be resumed by calling start() again
 
 ## Configuration
 
-| Name           | Description                                                  | Default  |
-|----------------|--------------------------------------------------------------|----------|
-| name           | Name used for logging                                        |          |
-| maxQueueSize   | Maximum number of items to prefetch/buffer                   |          |
-| maxConcurrency | Maximum number of concurrent fetch calls made to item source |          |
-| maxBatchSize   | Maximum number of items to fetch in each call                |          |
-| maxBackoff     | Maximum wait time used in backoff mechanism                  | 1 second |
+| Name           | Description                                                     | Default  |
+|----------------|-----------------------------------------------------------------|----------|
+| name           | Name used for logging                                           |          |
+| maxQueueSize   | Maximum number of items to prefetch/buffer                      |          |
+| maxConcurrency | Maximum number of allowed concurrent fetch calls to item source |          |
+| maxBatchSize   | Maximum number of items to fetch in each call                   |          |
+| maxBackoff     | Maximum wait time used in backoff mechanism                     | 1 second |
 
 ## License
 
