@@ -5,9 +5,9 @@ import com.idj.internal.{BufferingService, Controller}
 
 import scala.concurrent.Future
 
-class BufferedInputQueue[T](
+class PrefetchInputQueue[T](
     itemSource: ItemSource[T],
-    conf: BufferedInputQueueConfig,
+    conf: PrefetchInputQueueConfig,
     ctx: Context
 ) {
 
@@ -33,21 +33,21 @@ class BufferedInputQueue[T](
   }
 }
 
-object BufferedInputQueue {
+object PrefetchInputQueue {
 
   def create[T](
       itemSource: ItemSource[T],
-      conf: BufferedInputQueueConfig
-  ): BufferedInputQueue[T] = {
-    new BufferedInputQueue[T](itemSource, conf, Context.Simple.global)
+      conf: PrefetchInputQueueConfig
+  ): PrefetchInputQueue[T] = {
+    new PrefetchInputQueue[T](itemSource, conf, Context.Simple.global)
   }
 
   def create[T](
       itemSource: ItemSource[T],
-      conf: BufferedInputQueueConfig,
+      conf: PrefetchInputQueueConfig,
       ctx: Context
-  ): BufferedInputQueue[T] = {
-    new BufferedInputQueue[T](itemSource, conf, ctx)
+  ): PrefetchInputQueue[T] = {
+    new PrefetchInputQueue[T](itemSource, conf, ctx)
   }
 
 }

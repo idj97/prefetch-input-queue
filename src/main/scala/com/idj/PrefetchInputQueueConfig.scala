@@ -2,7 +2,7 @@ package com.idj
 
 import scala.concurrent.duration.{Duration, DurationInt}
 
-case class BufferedInputQueueConfig(
+case class PrefetchInputQueueConfig(
     name: String,
     maxQueueSize: Int,
     maxBatchSize: Int,

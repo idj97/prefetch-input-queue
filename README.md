@@ -1,6 +1,6 @@
-# Buffered Input Queue
+# Prefetch Input Queue
 
-Buffered Input Queue is a lightweight, thread-safe library built with Scala and actors for educational purposes. 
+Prefetch Input Queue is a lightweight, thread-safe library built with Scala and actors for educational purposes. 
 It is designed to improve the efficiency of multithreaded programs that follow producer-consumer pattern by 
 prefetching/buffering the data from source systems and providing it to consumers, all in a thread-safe manner.
 
@@ -14,7 +14,7 @@ prefetching/buffering the data from source systems and providing it to consumers
 Add library to `build.sbt`:
 
 ```scala
-"com.idj" % "buffered-input-queue" %% $VERSION
+"com.idj" % "prefetch-input-queue" %% $VERSION
 ```
 Artifacts are published to central Maven Repository, link coming soon.
 
@@ -36,34 +36,34 @@ class MyRandomIntsSource() extends ItemSource[Int] {
 }
 ```
 
-Then configure, create and start BufferedInputQueue:
+Then configure, create and start PrefetchInputQueue:
 
 ```scala 
-import com.idj.{BufferedInputQueueConfig, BufferedInputQueue}
+import com.idj.{PrefetchInputQueueConfig, PrefetchInputQueue}
 
-val itemSource = new MyRandomIntsSource()
-val config = BufferedInputQueueConfig(
+val source = new MyRandomIntsSource()
+val config = PrefetchInputQueueConfig(
   name = "myInputQueue",
   maxQueueSize = 1000,
   maxConcurrency = 10,
   maxBatchSize = 20,
   maxBackoff = 5.seconds
 )
-val bufInQueue = BufferedInputQueue.create(itemSource, config)
-bufInQueue.start()
+val queue = PrefetchInputQueue.create(source, config)
+queue.start()
 ```
 
 Consume items from the queue, in sync or async fashion. In case when queue is empty result value is returned
 immediately and is also empty:
 
 ```scala
-val items: Seq[Int] = bufInQueue.get(n = 100) // sync api
-val itemsFuture: Future[Int] = bufInQueue.getAsync(n = 100) // async api
+val items: Seq[Int] = queue.get(n = 100) // sync api
+val itemsFuture: Future[Int] = queue.getAsync(n = 100) // async api
 ```
 
 Stop prefetching/buffering:
 ```scala
-bufInQueue.stop() // can be resumed by calling start() again
+queue.stop() // can be resumed by calling start() again
 ```
 
 ## Configuration

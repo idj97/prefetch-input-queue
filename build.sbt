@@ -5,7 +5,7 @@ ThisBuild / organizationName := "idj"
 
 lazy val root = (project in file("."))
   .settings(
-    name := "buffered-input-queue",
+    name := "prefetch-input-queue",
     libraryDependencies ++= Seq(
       "com.lihaoyi" %% "castor" % "0.3.0",
       "org.slf4j" % "slf4j-api" % "2.0.9",
