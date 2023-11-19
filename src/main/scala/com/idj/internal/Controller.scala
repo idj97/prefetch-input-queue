@@ -4,12 +4,14 @@ import castor.{Context, SimpleActor}
 import com.idj.internal.Controller._
 import org.slf4j.LoggerFactory
 
+import java.time.Duration
 import scala.collection.mutable
 import scala.concurrent.Promise
 
 class Controller[T](
     name: String,
     maxQueueSize: Int,
+    maxBackoff: Long,
     bufService: BufferingService[T],
     initial: Seq[T] = Seq.empty
 )(implicit ctx: Context)
@@ -20,6 +22,7 @@ class Controller[T](
   private val queue = mutable.Queue[T](initial: _*)
   private var buffering = false
   private var stopped = false
+  private var backoffCounter = 0
 
   import Protocol._
 
@@ -27,8 +30,8 @@ class Controller[T](
     this.send(AddItems(items))
   }
 
-  def bufferingDone(): Unit = {
-    this.send(BufferingDone)
+  def bufferingDone(n: Int): Unit = {
+    this.send(BufferingDone(n))
   }
 
   override def run(msg: ControllerMsg): Unit = {
@@ -36,6 +39,7 @@ class Controller[T](
       case Start =>
         logger.debug("Starting")
         stopped = false
+        backoffCounter = 0
         this.send(StartBuffering)
 
       case Stop =>
@@ -56,7 +60,7 @@ class Controller[T](
         }
 
       case Debug(p) =>
-        p.success(DebugInfo(queue.toSeq, buffering))
+        p.success(DebugInfo(queue.toSeq, buffering, backoffCounter))
 
       case StartBuffering =>
         if (!buffering) {
@@ -72,12 +76,26 @@ class Controller[T](
         logger.debug(s"Adding ${items.length} items")
         queue.enqueueAll(items)
 
-      case BufferingDone =>
+      case BufferingDone(n) =>
         if (buffering) {
           logger.debug(s"Buffering done")
           buffering = false
+
+          // if 0 items were buffered then increase backoffCounter
+          // otherwise reset it
+          if (n == 0) { backoffCounter += 1 }
+          else { backoffCounter = 0 }
+
           if (!stopped) {
-            this.send(StartBuffering)
+            if (backoffCounter == 0) {
+              this.send(StartBuffering)
+            } else {
+              // use backoffCounter to compute backoff time
+              val cntBasedBackoff = 100 * Math.pow(2, backoffCounter).toLong
+              val backoffMs = if (cntBasedBackoff < maxBackoff) cntBasedBackoff else maxBackoff
+              logger.debug(s"Applying buffering backoff of $backoffMs ms")
+              ctx.scheduleMsg(this, StartBuffering, Duration.ofMillis(backoffMs))
+            }
           }
         }
     }
@@ -87,11 +105,11 @@ class Controller[T](
     case class Get(n: Int, promise: Promise[Seq[T]]) extends ControllerMsg
     case object StartBuffering extends ControllerMsg
     case class AddItems(items: Seq[T]) extends ControllerMsg
-    case object BufferingDone extends ControllerMsg
+    case class BufferingDone(n: Int) extends ControllerMsg
     case object Start extends ControllerMsg
     case object Stop extends ControllerMsg
     private[idj] case class Debug(promise: Promise[DebugInfo]) extends ControllerMsg
-    private[idj] case class DebugInfo(items: Seq[T], buffering: Boolean)
+    private[idj] case class DebugInfo(items: Seq[T], buffering: Boolean, backoffCounter: Int)
   }
 }
 

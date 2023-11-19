@@ -14,7 +14,7 @@ class BufferedInputQueue[T](
   private val bufferingService =
     new BufferingService[T](itemSource, conf.name, conf.maxBatchSize, conf.maxConcurrency)(ctx)
   private val controller =
-    new Controller[T](conf.name, conf.maxQueueSize, bufferingService)(ctx)
+    new Controller[T](conf.name, conf.maxQueueSize, conf.maxBackoff.toMillis, bufferingService)(ctx)
 
   def start(): Unit = {
     controller.send(controller.Protocol.Start)

@@ -35,7 +35,7 @@ class Bufferer[T](
         if (done || (remaining == 0 && ongoingCalls.isEmpty)) {
           if (!controllerNotified) {
             logger.debug(s"Buffering done $buffered/$n, notifying controller")
-            controller.bufferingDone()
+            controller.bufferingDone(buffered)
             controllerNotified = true
           }
           done = true

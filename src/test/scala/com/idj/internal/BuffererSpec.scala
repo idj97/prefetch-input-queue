@@ -29,7 +29,7 @@ class BuffererSpec extends AnyWordSpec {
 
     val controller = mock(classOf[Controller[Int]])
     doNothing().when(controller).addItems(any[Seq[Int]])
-    doNothing().when(controller).bufferingDone()
+    doNothing().when(controller).bufferingDone(7)
 
     val _ = new Bufferer[Int](controller, itemSource, "test", n, maxBatchSize, maxConcurrency)(ctx)
     Thread.sleep(100)
@@ -40,6 +40,6 @@ class BuffererSpec extends AnyWordSpec {
     verify(controller, times(1)).addItems(Seq(i1, i2, i3))
     verify(controller, times(1)).addItems(Seq(i4, i5, i6))
     verify(controller, times(1)).addItems(Seq(i7))
-    verify(controller, times(1)).bufferingDone()
+    verify(controller, times(1)).bufferingDone(7)
   }
 }

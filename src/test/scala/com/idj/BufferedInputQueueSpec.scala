@@ -5,7 +5,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 import scala.annotation.tailrec
 import scala.collection.mutable
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration, DurationInt}
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 class BufferedInputQueueSpec extends AnyWordSpec {
@@ -18,9 +18,11 @@ class BufferedInputQueueSpec extends AnyWordSpec {
       name = "itTest1",
       maxQueueSize = 50,
       maxBatchSize = 10,
-      maxConcurrency = 2
+      maxConcurrency = 2,
+      maxBackoff = 10.seconds
     )
-    val bufInQueue = BufferedInputQueue.create(itemSource, conf, Context.Simple.global)
+    val ctx = new Context.Test()
+    val bufInQueue = BufferedInputQueue.create(itemSource, conf, ctx)
     bufInQueue.start()
     val itemsAccumulator = mutable.Set[Int]()
 
@@ -56,6 +58,8 @@ class BufferedInputQueueSpec extends AnyWordSpec {
 
     // shutdown queue
     bufInQueue.stop()
+    ctx.waitForInactivity()
+    succeed
   }
 }
 

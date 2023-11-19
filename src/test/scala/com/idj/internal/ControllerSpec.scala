@@ -10,13 +10,14 @@ class ControllerSpec extends AnyWordSpec {
   private val sharedNoopBufService = mock(classOf[BufferingService[Int]])
   private val (i1, i2, i3) = (1, 2, 3)
   private val maxQueueSize = 5
+  private val maxBackoff = 1000
 
   "Get" when {
 
     "empty" in {
       val ctx: Context.Test = new Context.Test()
       val controller: Controller[Int] =
-        new Controller[Int]("test1", maxQueueSize, sharedNoopBufService)(ctx)
+        new Controller[Int]("test1", maxQueueSize, maxBackoff, sharedNoopBufService)(ctx)
       import controller.Protocol.Get
       val items = controller.ask[Seq[Int]](p => Get(n = 1, p))
       assert(items.isEmpty)
@@ -25,7 +26,13 @@ class ControllerSpec extends AnyWordSpec {
     "n < len(queue)" in {
       val ctx: Context.Test = new Context.Test()
       val controller: Controller[Int] =
-        new Controller[Int]("test2", maxQueueSize, sharedNoopBufService, Seq(i1, i2, i3))(ctx)
+        new Controller[Int](
+          "test2",
+          maxQueueSize,
+          maxBackoff,
+          sharedNoopBufService,
+          Seq(i1, i2, i3)
+        )(ctx)
       import controller.Protocol._
 
       val requested = controller.ask[Seq[Int]](p => Get(n = 1, p))
@@ -37,7 +44,13 @@ class ControllerSpec extends AnyWordSpec {
     "n == len(queue)" in {
       val ctx: Context.Test = new Context.Test()
       val controller: Controller[Int] =
-        new Controller[Int]("test3", maxQueueSize, sharedNoopBufService, Seq(i1, i2, i3))(ctx)
+        new Controller[Int](
+          "test3",
+          maxQueueSize,
+          maxBackoff,
+          sharedNoopBufService,
+          Seq(i1, i2, i3)
+        )(ctx)
       import controller.Protocol._
 
       val requested = controller.ask[Seq[Int]](p => Get(n = 3, p))
@@ -56,7 +69,9 @@ class ControllerSpec extends AnyWordSpec {
     val bufService = mock(classOf[BufferingService[Int]])
     val initialItems = Seq(i1, i2)
     val controller: Controller[Int] =
-      new Controller[Int]("StartBuffering1", maxQueueSize, bufService, initialItems)(ctx)
+      new Controller[Int]("StartBuffering1", maxQueueSize, maxBackoff, bufService, initialItems)(
+        ctx
+      )
     import controller.Protocol._
     val expectedFreeSpace = maxQueueSize - initialItems.length
     doNothing()
@@ -99,16 +114,54 @@ class ControllerSpec extends AnyWordSpec {
 
     // complete buffering
     // expected: controller is not in buffering state
-    controller.send(BufferingDone)
+    controller.send(BufferingDone(3))
     ctx.waitForInactivity()
     val debugT5 = controller.ask[DebugInfo](p => Debug(p))
     assert(!debugT5.buffering)
 
     // complete buffering again (it is already completed)
     // expected: controller is not in buffering state
-    controller.send(BufferingDone)
+    controller.send(BufferingDone(3))
     ctx.waitForInactivity()
     val debugT6 = controller.ask[DebugInfo](p => Debug(p))
     assert(!debugT6.buffering)
+  }
+
+  "backoff" in {
+    val bufService = mock(classOf[BufferingService[Int]])
+    doNothing().when(bufService).start(any[Controller[Int]], ArgumentMatchers.eq(maxQueueSize))
+
+    val ctx = new Context.Test()
+    val controller = new Controller[Int](
+      name = "backoff1",
+      maxQueueSize = maxQueueSize,
+      maxBackoff = maxBackoff,
+      bufService = bufService,
+      initial = Seq.empty
+    )(ctx)
+    import controller.Protocol._
+
+    // 5 'empty bufferings' in a row
+    controller.send(StartBuffering)
+    controller.bufferingDone(0)
+    controller.send(StartBuffering)
+    controller.bufferingDone(0)
+    controller.send(StartBuffering)
+    controller.bufferingDone(0)
+    controller.send(StartBuffering)
+    controller.bufferingDone(0)
+    controller.send(StartBuffering)
+    controller.bufferingDone(0)
+    val debug = controller.ask[DebugInfo](p => Debug(p))
+    assert(debug.backoffCounter == 5)
+
+    // one successful buffering
+    controller.send(StartBuffering)
+    controller.bufferingDone(20)
+    val debug2 = controller.ask[DebugInfo](p => Debug(p))
+    assert(debug2.backoffCounter == 0)
+
+    controller.send(Stop)
+    succeed
   }
 }
