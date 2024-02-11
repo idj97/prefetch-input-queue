@@ -9,16 +9,6 @@ Todo:
 - [x] Thread-safe
 - [x] Exponential backoff mechanism
 - [x] Configurability
-- [ ] Publish to central Maven Repo
-
-## Install
-
-Add library to `build.sbt`:
-
-```scala
-"com.idj" % "prefetch-input-queue" %% $VERSION
-```
-Artifacts are published to central Maven Repository, link coming soon.
 
 ## Usage
 
